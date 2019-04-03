@@ -1,0 +1,365 @@
+<html>
+    <style>
+        .tiles          { table-layout: fixed;
+                      border-spacing: 0         }
+        .tiles td       { padding: 0;               }
+        .brighter       { background: #C0C0C0;      }
+        .darker         { background: #DAA520;      }
+        .piece          { position: absolute;
+                      border-radius: 20px;      }
+        .white          { background: white;        }
+        .black          { background: black;        }
+        .queen          { box-shadow: inset 0 0 4px 5px brown; }
+        .game           {
+                        overflow: hidden;
+                        max-width: 600px;
+                        max-height: 450px;
+                        position: relative;
+                        }
+    </style>
+    <body>
+    </body>
+    <script>
+        var SIZE = 8;
+        var SCALE = 40;
+        
+        function Position (x, y) {
+            this.x = x; this.y = y;
+        }
+        
+        Position.prototype.sum = function(other) {
+            return new Position(this.x + other.x, this.y + other.y);
+        };
+        
+        Position.prototype.multiply = function(scalar) {
+            return new Position(this.x * scalar, this.y * scalar);
+        };
+        
+        Position.prototype.isEquals = function(other) {
+            return (this.x == other.x && this.y == other.y);
+        };
+        
+        Position.prototype.inBoardBounds = function() {
+            return (SIZE > this.x && this.x >=0 &&
+                    SIZE > this.y && this.y >=0);
+        };
+        
+        //location is object of Position class.
+        //isWhite returns true for white and false for black colour of play piece.
+        //isQueen returns true for promoted item.
+        function Piece (location, isWhite) {
+            this.location = location;
+            this.isWhite = isWhite;
+            this.isQueen = false;
+        }
+        
+        Piece.prototype.promote = function () {
+            this.isQueen = true;
+        };
+        
+        //end of declarations.
+        
+        
+        function Board() {
+            this.width = SIZE;
+            this.height = SIZE;
+            this.pieces = [];
+            
+            for (var y = 0; y<3; y++) {
+                var x = (y%2==0?0:1);
+                for (; x<SIZE; x+=2) {
+                    this.pieces.push(new Piece(new Position(x,y), false))
+                }
+            }
+            for (var y = 5; y<SIZE; y++) {
+                var x = (y%2==0?0:1);
+                for (; x<SIZE; x+=2) {
+                    this.pieces.push(new Piece(new Position(x,y), true))
+                }
+            }
+            
+            this.isBlackTurn = false;
+            this.endOfGame = false;
+        }
+        
+        Board.prototype.pieceAt = function(position) {
+            var result = false;
+            this.pieces.forEach(function(item) {
+                if (item.location.isEquals(position)) {
+                    result = item;
+                    return;
+                }
+            });
+            return result;
+        };
+        
+        //מחזיר אמת אם יש לו מהלך אכילה אפשרי
+        Board.prototype.canCapture = function(piece) {
+            
+            if (piece.isQueen) {
+                arrival = piece.location.sum(new Position(0, (that.isBlackTurn?1:(-1))));
+                
+                times = 1;
+                possible = false;
+                while ((times < SIZE) && !possible) {
+                    if (that.isValidPlay(piece.location, arrival.sum(new Position(1,0).multiply(times))) ||
+                       that.isValidPlay(piece.location, arrival.sum(new Position(-1,0).multiply(times))) )
+                        possible = true;
+                    times++;
+                    //איך מוודאים שיש אוכל בדרך?
+                }
+                return possible;
+                
+            } else {
+                arrival = piece.location.sum(new Position(0, (that.isBlackTurn?2:(-2))));
+                
+                return (that.isValidPlay(piece.location, arrival.sum(new Position(2,0))) ||
+                       that.isValidPlay(piece.location, arrival.sum(new Position(-2,0))) )
+            }
+        }
+        
+        //מחזיר אמת אם יש לו מהלך תנועה אפשרי
+        Board.prototype.canMove = function(piece) {
+            
+            arrival = piece.location.sum(new Position(0, (that.isBlackTurn?1:(-1))));
+            
+            if (piece.isQueen) {
+                times = 1;
+                possible = false;
+                while ((times < SIZE) && !possible) {
+                    if (that.isValidPlay(piece.location, arrival.sum(new Position(1,0).multiply(times))) ||
+                       that.isValidPlay(piece.location, arrival.sum(new Position(-1,0).multiply(times))) )
+                        possible = true;
+                    times++;
+                }
+                return possible;
+                
+            } else {
+                return (that.isValidPlay(piece.location, arrival.sum(new Position(1,0))) ||
+                       that.isValidPlay(piece.location, arrival.sum(new Position(-1,0))) )
+            }
+        }
+        
+        //מחזיר 0 אם אין מהלך אפשרי, 2 אם יש מהלך אכילה אפשרי או 1 אם יש רק מהלך צעידה רגיל
+        Board.prototype.hasAvailablePlay = function() {
+            that = this;
+            return 0;
+            
+            
+            if (this.pieces.some(this.canCapture))
+                return 2;
+            
+            if (this.pieces.some(this.canMove))
+                return 1;
+            
+            return 0;
+        }
+        
+        Board.prototype.attemptMoving = function(origin, destination) {
+            if (!this.endOfGame && this.isValidPlay(origin, destination)) {
+                this.pieceAt(origin).location = destination;
+                
+                if (Math.abs(destination.x-origin.x)>1) {
+                    
+                    var slope = new Position(
+                        (destination.x - origin.x)/(Math.abs(destination.x - origin.x)),
+                        (destination.y - origin.y)/(Math.abs(destination.y - origin.y))
+                        );
+                    
+                    var locationBetween = origin.sum(slope);
+                    
+                    while (!(destination.isEquals(locationBetween))) {
+                        this.pieces.splice((this.pieces.indexOf(this.pieceAt(locationBetween))),1);
+                        
+                        locationBetween = locationBetween.sum(slope);
+                    }
+                }
+                
+                if (destination.y == (this.isBlackTurn?(SIZE-1):0))
+                    this.pieceAt(destination).promote();
+                
+                
+                this.nextRound();
+            }
+        }
+        
+        Board.prototype.isValidPlay = function(origin, destination) {
+            if (!destination.inBoardBounds())
+                return false;
+            
+            if (this.isBlackTurn == this.pieceAt(origin).isWhite)
+                return false;
+            
+            if (this.pieceAt(destination) != false)
+                return false;
+            
+            if (this.pieceAt(origin).isQueen) {
+                return this.isValidQueenPlay(origin, destination);
+            } else {
+                if ( Math.abs(destination.x - origin.x) == 1 ) {
+                    return this.isValidMove(origin, destination);
+                } else {
+                    return this.isValidCapture(origin, destination);
+                }
+            }
+        }
+        
+        //בודק מקרה של תנועת כלי ללא אכילה
+        Board.prototype.isValidMove = function(origin, destination) {
+            if (( Math.abs(destination.x - origin.x)  == 1 ) && ( (destination.y - origin.y) == (this.isBlackTurn?(1):(-1)) )) {
+                    return true;
+            }
+            return false;
+        }
+        
+        //בודק מקרה של תנועת כלי תוך אכילה
+        Board.prototype.isValidCapture = function(origin, destination) {
+            if (( Math.abs(destination.x - origin.x) == 2 ) &&
+                ( (destination.y - origin.y) == (this.isBlackTurn?(2):(-2)) ) &&
+                ( (this.pieceAt(destination.sum(origin).multiply(0.5)).isWhite) == (this.isBlackTurn) )) {
+                return true;
+            }
+            return false;
+        }
+        
+        //בודק מקרה של תנועה כלי מלך
+        Board.prototype.isValidQueenPlay = function(origin, destination) {
+            
+            var slope = new Position(
+                (destination.x - origin.x)/(Math.abs(destination.x - origin.x)),
+                (destination.y - origin.y)/(Math.abs(destination.y - origin.y))
+            );
+            
+            var locationBetween = origin.sum(slope);
+            
+            while (!(destination.isEquals(locationBetween))) {
+                if (this.isBlackTurn?(!this.pieceAt(locationBetween).isWhite):(this.pieceAt(locationBetween).isWhite))
+                    return false;
+                
+                locationBetween = locationBetween.sum(slope);
+            }
+            
+            return true;
+        }
+        
+        //מחליף תור
+        Board.prototype.nextRound = function() {
+            this.isBlackTurn = !this.isBlackTurn;
+            
+            if (this.hasAvailablePlay() == 0)
+                this.endOfGame = true;
+        }
+        
+        //end of brain-engine
+        
+        function createElement(name, className) {
+            var element = document.createElement(name);
+            if (className) element.className = className;
+            return element;
+        }
+        
+        function Display(parent, board) {
+            this.wrap = parent.appendChild(createElement("div", "game"));
+            this.board = board;
+            
+            this.wrap.appendChild(this.drawTiles());
+            
+            this.playLayer = null;
+            this.drawPlayLayer();
+            
+        }
+        
+        Display.prototype.drawTiles = function() {
+            var table = createElement("table", "tiles");
+            table.style.width = this.board.width * SCALE + "px";
+            for (var y = 0; y < this.board.height; y++) {
+                var rowElt = table.appendChild(createElement("tr"));
+                rowElt.style.height = SCALE + "px";
+                for (var x = 0; x < this.board.width; x++) {
+                    if ((x+y)%2 == 0)
+                        var cssClass = "brighter";
+                    else
+                        var cssClass = "darker";
+                    rowElt.appendChild(createElement("td", cssClass));
+                }
+            }
+            return table;
+        };
+        
+        Display.prototype.drawPlayLayer = function() {
+            if (this.playLayer)
+                this.wrap.removeChild(this.playLayer);
+            this.playLayer = this.wrap.appendChild(this.drawPieces());
+            
+            if (this.board.endOfGame)
+                this.drawEndCard(this.isBlackTurn?"White":"Black");
+            
+            //חסרה שורה שמופיעה במקור - למה היא משמשת?
+            
+        };
+        
+        Display.prototype.drawPieces = function() {
+            var engine = this.board;
+            var graphic = this;
+            var wrap = createElement("div");
+            wrap.id = "pieces";
+            this.board.pieces.forEach(function(piece) {
+                var item = wrap.appendChild(createElement("div", "piece " + (piece.isWhite?"white":"black")));
+                                            if (piece.isQueen)
+                item.className += " queen";
+                item.style.left = piece.location.x * SCALE + "px";
+                item.style.top = piece.location.y * SCALE + "px";
+                item.style.width = SCALE + "px";
+                item.style.height = SCALE + "px";
+                item.addEventListener("mousedown", function(event) {
+                    if (event.which == 1) {
+                        event.preventDefault();
+                        var initialLocation = piece.location; //maybe this line can be deleted?? I think it's not being used.
+                        addEventListener("mousemove", moved);
+                    }
+                });
+                
+                function buttonPressed(event) {
+                    if (event.buttons == null)
+                        return event.which != 0;
+                    else
+                        return event.buttons != 0;
+                }
+                
+                function moved(event) {
+                    if (!buttonPressed(event)) {
+                        var initialLocation = piece.location;
+                        var finalLocation = new Position(Math.floor(event.pageX/SCALE), Math.floor(event.pageY/SCALE));
+                        
+                        engine.attemptMoving(initialLocation, finalLocation);
+                        graphic.drawPlayLayer();
+                        
+                        //חסר התייחסות לרגע שבו עוזבים את הכלי משחק והוא נופל על הלוח.
+                        removeEventListener("mousemove", moved);
+                    } else {
+                        item.style.left = (event.pageX - SCALE/2) + "px";
+                        item.style.top = (event.pageY - SCALE/2) + "px";
+                    }
+                }
+            });
+            
+            //לא סיימתי לכתוב את זה
+            return wrap;
+        }
+        
+        Display.prototype.drawEndCard = function(playerColour) {
+            var winCard = createElement("div");
+            winCard.id = "WinCard";
+            this.wrap.appendChild(winCard);
+            
+            winCard.textContent = "Game Over!\n" + playerColour + " has won.";
+        }
+        
+        //end of display card
+        
+        var starting = new Display(document.body, new Board());
+        
+        
+        
+    </script>
+</html>
