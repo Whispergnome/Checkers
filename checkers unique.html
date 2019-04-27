@@ -246,8 +246,8 @@
         Board.prototype.nextRound = function() {
             this.isBlackTurn = !this.isBlackTurn;
             
-            if (this.hasAvailablePlay() == 0)
-                this.endOfGame = true;
+//            if (this.hasAvailablePlay() == 0)
+//                this.endOfGame = true;
         }
         
         //end of brain-engine
@@ -347,6 +347,7 @@
             return wrap;
         }
         
+/*
         Display.prototype.drawEndCard = function(playerColour) {
             var winCard = createElement("div");
             winCard.id = "WinCard";
@@ -354,6 +355,7 @@
             
             winCard.textContent = "Game Over!\n" + playerColour + " has won.";
         }
+*/
         
         //end of display card
         
