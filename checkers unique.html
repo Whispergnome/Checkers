@@ -23,7 +23,24 @@
         var SIZE = 8;
         var SCALE = 40;
         
-        function Position (x, y) {
+        function emptyness () {
+					var exit_button = document.createElement("button");
+					exit_button.innerHTML = "Do Something";
+
+					// 2. Append somewhere
+					var body = document.getElementsByTagName("body")[0];
+					body.appendChild(exit_button);
+
+					// 3. Add event handler
+					exit_button.addEventListener ("click", function() {
+						alert("did something");
+						exit_button.parentNode.removeChild(exit_button);
+					});
+		}
+		
+		
+		
+		function Position (x, y) {
             this.x = x; this.y = y;
         }
         
@@ -356,10 +373,33 @@
             winCard.textContent = "Game Over!\n" + playerColour + " has won.";
         }
 */
-        
+
+		
         //end of display card
         
-        var starting = new Display(document.body, new Board());
+		// 1. Create the button
+		var new_board = document.createElement("button");
+		new_board.innerHTML = "New Board";
+		
+
+		// 2. Append somewhere
+		var body = document.getElementsByTagName("body")[0];
+		body.appendChild(new_board);
+
+		// 3. Add event handler
+		new_board.addEventListener ("click", function() {
+		new_board.parentNode.removeChild(new_board);
+		  var starting = new Display(document.body, new Board()); 
+		  var emptus = new emptyness();
+		  starting = null;
+		  
+		});
+		
+		
+		
+		
+		
+        
         
         
         
