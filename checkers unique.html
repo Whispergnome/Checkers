@@ -23,24 +23,7 @@
         var SIZE = 8;
         var SCALE = 40;
         
-        function emptyness () {
-					var exit_button = document.createElement("button");
-					exit_button.innerHTML = "Do Something";
-
-					// 2. Append somewhere
-					var body = document.getElementsByTagName("body")[0];
-					body.appendChild(exit_button);
-
-					// 3. Add event handler
-					exit_button.addEventListener ("click", function() {
-						alert("did something");
-						exit_button.parentNode.removeChild(exit_button);
-					});
-		}
-		
-		
-		
-		function Position (x, y) {
+        function Position (x, y) {
             this.x = x; this.y = y;
         }
         
@@ -82,21 +65,57 @@
             this.height = SIZE;
             this.pieces = [];
             
-            for (var y = 0; y<3; y++) {
-                var x = (y%2==0?0:1);
-                for (; x<SIZE; x+=2) {
-                    this.pieces.push(new Piece(new Position(x,y), false))
-                }
-            }
-            for (var y = 5; y<SIZE; y++) {
-                var x = (y%2==0?0:1);
-                for (; x<SIZE; x+=2) {
-                    this.pieces.push(new Piece(new Position(x,y), true))
-                }
-            }
+            this.setUp();
             
             this.isBlackTurn = false;
             this.endOfGame = false;
+        }
+        
+        //מסדר את הלוח למצב ראשוני על פי נתונים שמוזנים, אם יש, או משחק חדש
+        Board.prototype.setUp = function(startingPoint) {
+            if (startingPoint == undefined) {
+                startingPoint = "b0b0b0b00b0b0b0bb0b0b0b000000000000000000w0w0w0ww0w0w0w00w0w0w0w";
+            }
+            
+            for (var i = 0; i < startingPoint.length; i++) {
+                var a = i%SIZE;
+                var b = Math.floor(i/SIZE);
+                
+                switch (startingPoint.charAt(i)) {
+                    case "W":
+                        var pieceToSet = new Piece(new Position((a),(b)),true);
+                        pieceToSet.promote();
+                        this.pieces.push(pieceToSet);
+                        break;
+                    case "B":
+                        var pieceToSet = new Piece(new Position((a),(b)),false);
+                        pieceToSet.promote();
+                        this.pieces.push(pieceToSet);
+                        break;
+                    case "w":
+                        var pieceToSet = new Piece(new Position((a),(b)),true);
+                        this.pieces.push(pieceToSet);
+                        break;
+                    case "b":
+                        var pieceToSet = new Piece(new Position((a),(b)),false);
+                        this.pieces.push(pieceToSet);
+                        break;
+                    default:
+                }
+            }
+            
+//origianl code to setting up a clean board for a new game.
+//                for (var y = 0; y<3; y++) {
+//                    var x = (y%2==0?0:1);
+//                    for (; x<SIZE; x+=2) {
+//                        this.pieces.push(new Piece(new Position(x,y), false))
+//                    }
+//                }
+//                for (var y = 5; y<SIZE; y++) {
+//                    var x = (y%2==0?0:1);
+//                    for (; x<SIZE; x+=2) {
+//                        this.pieces.push(new Piece(new Position(x,y), true))
+                    
         }
         
         Board.prototype.pieceAt = function(position) {
@@ -373,33 +392,10 @@
             winCard.textContent = "Game Over!\n" + playerColour + " has won.";
         }
 */
-
-		
+        
         //end of display card
         
-		// 1. Create the button
-		var new_board = document.createElement("button");
-		new_board.innerHTML = "New Board";
-		
-
-		// 2. Append somewhere
-		var body = document.getElementsByTagName("body")[0];
-		body.appendChild(new_board);
-
-		// 3. Add event handler
-		new_board.addEventListener ("click", function() {
-		new_board.parentNode.removeChild(new_board);
-		  var starting = new Display(document.body, new Board()); 
-		  var emptus = new emptyness();
-		  starting = null;
-		  
-		});
-		
-		
-		
-		
-		
-        
+        var starting = new Display(document.body, new Board());
         
         
         
